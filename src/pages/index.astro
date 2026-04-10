@@ -1,49 +1,107 @@
 ---
-import BaseHead from '../components/BaseHead.astro';
-import Footer from '../components/Footer.astro';
-import Header from '../components/Header.astro';
-import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
+import BaseHead from "../components/BaseHead.astro";
+import Footer from "../components/Footer.astro";
+import Header from "../components/Header.astro";
+import { SITE_DESCRIPTION, SITE_TITLE } from "../consts";
+import "../styles/global.css";
+
+// Fetch server-side (Astro)
+const res = await fetch("http://localhost:4321/api/currencies");
+const currencies = await res.json();
 ---
 
 <!doctype html>
 <html lang="en">
-	<head>
-		<BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
-	</head>
-	<body>
-		<Header />
-		<main>
-			<h1>🧑‍🚀 Hello, Astronaut!</h1>
-			<p>
-				Welcome to the official <a href="https://astro.build/">Astro</a> blog starter template. This template
-				serves as a lightweight, minimally-styled starting point for anyone looking to build a personal
-				website, blog, or portfolio with Astro.
-			</p>
-			<p>
-				This template comes with a few integrations already configured in your
-				<code>astro.config.mjs</code> file. You can customize your setup with
-				<a href="https://astro.build/integrations">Astro Integrations</a> to add tools like Tailwind,
-				React, or Vue to your project.
-			</p>
-			<p>Here are a few ideas on how to get started with the template:</p>
-			<ul>
-				<li>Edit this page in <code>src/pages/index.astro</code></li>
-				<li>Edit the site header items in <code>src/components/Header.astro</code></li>
-				<li>Add your name to the footer in <code>src/components/Footer.astro</code></li>
-				<li>Check out the included blog posts in <code>src/content/blog/</code></li>
-				<li>Customize the blog post page layout in <code>src/layouts/BlogPost.astro</code></li>
-			</ul>
-			<p>
-				Have fun! If you get stuck, remember to
-				<a href="https://docs.astro.build/">read the docs</a>
-				or <a href="https://astro.build/chat">join us on Discord</a> to ask questions.
-			</p>
-			<p>
-				Looking for a blog template with a bit more personality? Check out
-				<a href="https://github.com/Charca/astro-blog-template">astro-blog-template</a>
-				by <a href="https://twitter.com/Charca">Maxi Ferreira</a>.
-			</p>
-		</main>
-		<Footer />
-	</body>
+  <head>
+    <BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
+  </head>
+  <body>
+    <Header />
+
+    <main class="p-8 max-w-xl mx-auto">
+      <h1 class="text-red-500! text-5xl mb-6">🧑‍🚀 Hello, Astronaut!</h1>
+
+      <h2 class="text-2xl mb-4 font-bold">💱 Currency Exchanger</h2>
+
+      <form id="converter" class="flex flex-col gap-4">
+        <input
+          type="number"
+          id="amount"
+          placeholder="Amount"
+          class="border p-2 rounded"
+        />
+
+        <div class="flex gap-2">
+          <select id="from" class="border p-2 rounded w-full">
+            {
+              Object.entries(currencies).map(([code, name]) => (
+                <option value={code}>
+                  {code} - {name}
+                </option>
+              ))
+            }
+          </select>
+
+          <select id="to" class="border p-2 rounded w-full">
+            {
+              Object.entries(currencies).map(([code, name]) => (
+                <option value={code}>
+                  {code} - {name}
+                </option>
+              ))
+            }
+          </select>
+        </div>
+        <pre>{JSON.stringify(currencies, null, 2)}</pre>
+
+        <button
+          type="submit"
+          class="bg-blue-500 text-white p-2 rounded hover:bg-blue-600"
+        >
+          Convert
+        </button>
+      </form>
+
+      <h3 id="result" class="mt-6 text-xl font-semibold"></h3>
+    </main>
+
+    <Footer />
+
+    <!-- Client-side logic -->
+    <script>
+      const form = document.getElementById(
+        "converter",
+      ) as HTMLFormElement | null;
+      const resultEl = document.getElementById("result") as HTMLElement | null;
+
+      if (form && resultEl) {
+        form.addEventListener("submit", async (e) => {
+          e.preventDefault();
+
+          const amount = document.getElementById("amount") as HTMLInputElement;
+          const from = document.getElementById("from") as HTMLSelectElement;
+          const to = document.getElementById("to") as HTMLSelectElement;
+
+          const amountValue = amount.value;
+          const fromValue = from.value;
+          const toValue = to.value;
+
+          if (!amountValue) return;
+
+          try {
+            const res = await fetch(
+              `https://api.frankfurter.dev/v2/latest?amount=${amountValue}&from=${fromValue}&to=${toValue}`,
+            );
+
+            const data = await res.json();
+            const rate = data.rates[toValue];
+
+            resultEl.textContent = `${amountValue} ${fromValue} = ${rate} ${toValue}`;
+          } catch (err) {
+            resultEl.textContent = "Error converting currency";
+          }
+        });
+      }
+    </script>
+  </body>
 </html>
