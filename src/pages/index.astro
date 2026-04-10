@@ -6,7 +6,7 @@ import { SITE_DESCRIPTION, SITE_TITLE } from "../consts";
 import "../styles/global.css";
 
 // Fetch server-side (Astro)
-const res = await fetch("http://localhost:4321/api/currencies");
+const res = await fetch("https://api.frankfurter.app/currencies");
 const currencies = await res.json();
 ---
 
@@ -52,7 +52,7 @@ const currencies = await res.json();
             }
           </select>
         </div>
-        <pre>{JSON.stringify(currencies, null, 2)}</pre>
+        <!-- <pre>{JSON.stringify(currencies, null, 2)}</pre> -->
 
         <button
           type="submit"
@@ -89,15 +89,19 @@ const currencies = await res.json();
           if (!amountValue) return;
 
           try {
-            const res = await fetch(
-              `https://api.frankfurter.dev/v2/latest?amount=${amountValue}&from=${fromValue}&to=${toValue}`,
-            );
+            const res = await fetch(`/api/rates?base=${fromValue}`);
+			
+            if (!res.ok) {
+              throw new Error(`HTTP error ${res.status}`);
+            }
 
             const data = await res.json();
-            const rate = data.rates[toValue];
+            const rate = fromValue === toValue ? 1 : data.rates[toValue];
+            const convertedAmount = (Number(amountValue) * rate).toFixed(2);
 
-            resultEl.textContent = `${amountValue} ${fromValue} = ${rate} ${toValue}`;
+            resultEl.textContent = `${amountValue} ${fromValue} = ${convertedAmount} ${toValue} (Rate: ${rate})`;
           } catch (err) {
+            console.error(err);
             resultEl.textContent = "Error converting currency";
           }
         });
